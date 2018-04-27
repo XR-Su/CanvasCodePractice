@@ -1,0 +1,157 @@
+<!--1.8-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        #canvas {
+            background-color: lightgray;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas" width="750" height="500">
+        Canvas not supported
+    </canvas>
+    <script src="http://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+</body>
+<script>
+    $(function() {
+        var canvas = document.getElementById('canvas'),
+            context = canvas.getContext('2d');
+        var img = new Image();
+        var puzzlePosition = {},
+            puzzleInitPosition = {},
+            puzzleRect = { width: 100, height: 100 };
+        var mouseDown = {},
+            isMove = false,
+            disPosition = {x: 50, y: 100}
+        img.src = './test.jpg'
+
+        // Functions...................
+        function windowToCanvas(x, y) {
+            var bbox = canvas.getBoundingClientRect();
+            return { x: x - bbox.left * (canvas.width  / bbox.width),
+                y: y - bbox.top  * (canvas.height / bbox.height)
+            };
+        };
+
+        function isMouseInCanvase(x, y) {
+            var pw = puzzleRect.width,
+                ph = puzzleRect.height,
+                px = puzzlePosition.x,
+                py = puzzlePosition.y;
+            context.beginPath();
+            context.rect(px, py, pw, ph);
+            return context.isPointInPath(x, y);
+        }
+
+        // drawing......................
+        function drawPuzzle() {
+            var pw = puzzleRect.width,
+                ph = puzzleRect.height,
+                px = puzzlePosition.x,
+                py = puzzlePosition.y;
+            context.save()
+            context.beginPath()
+            context.arc(px + pw/2, py + ph/2, 50, 0, Math.PI*2, false)
+            context.shadowColor = 'black'
+            context.shadowOffsetX = 6
+            context.shadowOffsetY = 6
+            context.shadowBlur = 20
+            context.fill()
+            context.restore();
+            context.save();
+            context.beginPath()
+            context.arc(px + pw/2, py + ph/2, 50, 0, Math.PI*2, false)
+            context.clip()
+            context.stroke()
+            context.drawImage(img, disPosition.x, disPosition.y, pw, ph, px, py, pw, ph);
+            context.restore();
+        }
+
+        function drawBackground() {
+            context.drawImage(img, 0, 0)
+        }
+
+        function drawLackPuzzle() {
+            var pw = puzzleRect.width,
+                ph = puzzleRect.height,
+                px = disPosition.x,
+                py = disPosition.y;
+
+            context.save() // 画拼图的阴影
+            context.beginPath()
+            context.arc(px + pw/2, py + ph/2, 50, 0, Math.PI*2, false)
+            context.shadowColor = 'black'
+            context.shadowOffsetX = -4
+            context.shadowOffsetY = -5
+            context.shadowBlur = 2
+            context.fill()
+            context.restore();
+
+            context.save(); // 画拼图
+            context.beginPath()
+            context.arc(px + pw/2, py + ph/2, 50, 0, Math.PI*2, false)
+            context.clip()
+            context.stroke()
+            context.drawImage(img, disPosition.x, disPosition.y, pw, ph, px, py, pw, ph);
+            context.restore();
+
+            context.save() // 画拼图的变暗效果
+            context.beginPath()
+            context.arc(px + pw/2, py + ph/2, 50, 0, Math.PI*2, false)
+            context.fillStyle = 'rgba(0, 0, 0, 0.5)'
+            context.fill()
+            context.restore();
+        }
+        // event handlers...............
+        document.getElementById('canvas').onmousedown = function (e) {
+            var loc = windowToCanvas(e.clientX, e.clientY)
+            // console.log(isMouseInCanvase(loc.x, loc.y))
+            // console.log(loc)
+            mouseDown = loc;
+            if (isMouseInCanvase(loc.x, loc.y)) {
+                isMove = true
+            }
+        }
+
+        document.getElementById('canvas').onmousemove = function (e) {
+            if (isMove) {
+                var loc = windowToCanvas(e.clientX, e.clientY)
+                var deltaX = loc.x - mouseDown.x;
+                var deltaY = loc.y - mouseDown.y;
+
+                // console.log(deltaX)
+                puzzlePosition.x = puzzleInitPosition.x + deltaX
+                puzzlePosition.y = puzzleInitPosition.y + deltaY
+                // console.log(puzzlePosition)
+                drawBackground()
+                drawLackPuzzle()
+                drawPuzzle()
+            }
+        }
+
+        document.getElementsByTagName('body')[0].onmouseup = function (e) {
+            isMove = false
+            puzzleInitPosition.x = puzzlePosition.x;
+            puzzleInitPosition.y = puzzlePosition.y;
+            if (puzzlePosition.x > disPosition.x-5 && puzzlePosition.x < disPosition.x+5 && puzzlePosition.y > disPosition.y-5 && puzzlePosition.y < disPosition.y+5) {
+                alert('验证成功！')
+            }
+        }
+
+        // Initialization...............
+        puzzlePosition.x = 0
+        puzzlePosition.y = canvas.height / 2 - puzzleRect.height / 2
+        puzzleInitPosition.x = puzzlePosition.x
+        puzzleInitPosition.y = puzzlePosition.y
+        img.onload = function () {
+            drawBackground()
+            drawPuzzle()
+            drawLackPuzzle()
+        }
+    })
+</script>
+</html>
